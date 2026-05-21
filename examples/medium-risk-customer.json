@@ -1,0 +1,23 @@
+{
+  "customerId": "CUST-MEDIUM-RISK-002",
+  "name": "Bob Johnson",
+  "age": 28,
+  "monthlyIncome": 2500,
+  "creditScore": 580,
+  "currentDebt": 2000,
+  "yearsWithBank": 1,
+  "employmentStatus": "SELF_EMPLOYED",
+  "hasSavings": false,
+  "savingsAmount": 0,
+  "isPoliticallyExposed": false,
+  "nationality": "US",
+  "loanAmount": 50000,
+  "loanTerm": 48,
+  "loanPurpose": "BUSINESS",
+  "productType": "STANDARD",
+  "collateralType": "NONE",
+  "collateralValue": 0,
+  "isRefinancing": false,
+  "previousLoansAmount": 0,
+  "numberOfApplicationsLast6Months": 2
+}

@@ -1,0 +1,657 @@
+package com.drools.poc.rules
+
+import com.drools.poc.model.Customer
+import com.drools.poc.model.LoanApplication
+import com.drools.poc.model.RiskAssessment
+import com.drools.poc.model.Decision
+
+/**
+ * REGLAS BODEGA (basadas en Bodegas.xlsx)
+ * Matriz exhaustiva por atributo + combinaciones clave.
+ *
+ * Convencion de valores esperados en LoanApplication:
+ * propertyCondition: NUEVO, USADO
+ * propertyAgeRange: MENOR_5, ENTRE_5_20, MAYOR_20
+ * propertyLocation: PARQUE_INDUSTRIAL, ZONA_FRANCA, ZONA_INDUSTRIAL, OTRA_UBICACION
+ * clearHeightRange: MENOR_7, DOBLE_ALTURA, TRIPLE_ALTURA
+ * accessDoorHeightRange: MENOR_3_5, ENTRE_3_5_4_5, MAYOR_4_5
+ * parkingAvailability: SI, NO, INCIERTO
+ * parkingIndexRange: MENOR_50, ENTRE_50_100, MAYOR_100
+ * saleableAreaRange: MENOR_500, ENTRE_500_1000, ENTRE_1000_5000, MAYOR_5000
+ * accessRoadType: VIA_PRINCIPAL, VIA_SECUNDARIA_BUENAS, VIA_SECUNDARIA_REGULARES
+ * subleaseContractRange: PROPIO, MENOR_1, ENTRE_1_5, ENTRE_5_10, MAYOR_10
+ */
+
+// ============== MATRIZ BASE POR ATRIBUTO ==============
+
+rule "Bodega Matrix - Condition New"
+    no-loop true
+    salience 260
+    when
+        $app: LoanApplication(assetType == "BODEGA", propertyCondition == "NUEVO")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Condition New");
+        $risk.addRiskFactor("BODEGA_CONDITION_NEW");
+        $risk.setRiskScore(Math.max(0, $risk.getRiskScore() - 3));
+end
+
+rule "Bodega Matrix - Condition Used"
+    no-loop true
+    salience 260
+    when
+        $app: LoanApplication(assetType == "BODEGA", propertyCondition == "USADO")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Condition Used");
+        $risk.addRiskFactor("BODEGA_CONDITION_USED");
+        $risk.setRiskScore($risk.getRiskScore() + 6);
+end
+
+rule "Bodega Matrix - Age Menor 5"
+    no-loop true
+    salience 260
+    when
+        $app: LoanApplication(assetType == "BODEGA", propertyAgeRange == "MENOR_5")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Age Menor 5");
+        $risk.addRiskFactor("BODEGA_AGE_MENOR_5");
+        $risk.setRiskScore(Math.max(0, $risk.getRiskScore() - 6));
+end
+
+rule "Bodega Matrix - Age Entre 5 20"
+    no-loop true
+    salience 260
+    when
+        $app: LoanApplication(assetType == "BODEGA", propertyAgeRange == "ENTRE_5_20")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Age Entre 5 20");
+        $risk.addRiskFactor("BODEGA_AGE_ENTRE_5_20");
+        $risk.setRiskScore($risk.getRiskScore() + 6);
+end
+
+rule "Bodega Matrix - Age Mayor 20"
+    no-loop true
+    salience 260
+    when
+        $app: LoanApplication(assetType == "BODEGA", propertyAgeRange == "MAYOR_20")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Age Mayor 20");
+        $risk.addRiskFactor("BODEGA_AGE_MAYOR_20");
+        $risk.setRiskScore($risk.getRiskScore() + 16);
+end
+
+rule "Bodega Matrix - Location Parque"
+    no-loop true
+    salience 255
+    when
+        $app: LoanApplication(assetType == "BODEGA", propertyLocation == "PARQUE_INDUSTRIAL")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Location Parque");
+        $risk.addRiskFactor("BODEGA_LOCATION_PARQUE");
+        $risk.setRiskScore(Math.max(0, $risk.getRiskScore() - 6));
+end
+
+rule "Bodega Matrix - Location Zona Franca"
+    no-loop true
+    salience 255
+    when
+        $app: LoanApplication(assetType == "BODEGA", propertyLocation == "ZONA_FRANCA")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Location Zona Franca");
+        $risk.addRiskFactor("BODEGA_LOCATION_ZONA_FRANCA");
+        $risk.setRiskScore(Math.max(0, $risk.getRiskScore() - 3));
+end
+
+rule "Bodega Matrix - Location Zona Industrial"
+    no-loop true
+    salience 255
+    when
+        $app: LoanApplication(assetType == "BODEGA", propertyLocation == "ZONA_INDUSTRIAL")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Location Zona Industrial");
+        $risk.addRiskFactor("BODEGA_LOCATION_ZONA_INDUSTRIAL");
+        $risk.setRiskScore($risk.getRiskScore() + 4);
+end
+
+rule "Bodega Matrix - Location Otra"
+    no-loop true
+    salience 255
+    when
+        $app: LoanApplication(assetType == "BODEGA", propertyLocation == "OTRA_UBICACION")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Location Otra");
+        $risk.addRiskFactor("BODEGA_LOCATION_OTRA");
+        $risk.setRiskScore($risk.getRiskScore() + 12);
+end
+
+rule "Bodega Matrix - Height Menor 7"
+    no-loop true
+    salience 250
+    when
+        $app: LoanApplication(assetType == "BODEGA", clearHeightRange == "MENOR_7")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Height Menor 7");
+        $risk.addRiskFactor("BODEGA_HEIGHT_MENOR_7");
+        $risk.setRiskScore($risk.getRiskScore() + 14);
+end
+
+rule "Bodega Matrix - Height Doble"
+    no-loop true
+    salience 250
+    when
+        $app: LoanApplication(assetType == "BODEGA", clearHeightRange == "DOBLE_ALTURA")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Height Doble");
+        $risk.addRiskFactor("BODEGA_HEIGHT_DOBLE");
+        $risk.setRiskScore(Math.max(0, $risk.getRiskScore() - 4));
+end
+
+rule "Bodega Matrix - Height Triple"
+    no-loop true
+    salience 250
+    when
+        $app: LoanApplication(assetType == "BODEGA", clearHeightRange == "TRIPLE_ALTURA")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Height Triple");
+        $risk.addRiskFactor("BODEGA_HEIGHT_TRIPLE");
+        $risk.setRiskScore(Math.max(0, $risk.getRiskScore() - 6));
+end
+
+rule "Bodega Matrix - Access Door Menor 3 5"
+    no-loop true
+    salience 245
+    when
+        $app: LoanApplication(assetType == "BODEGA", accessDoorHeightRange == "MENOR_3_5")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Access Door Menor 3 5");
+        $risk.addRiskFactor("BODEGA_ACCESS_DOOR_MENOR_3_5");
+        $risk.setRiskScore($risk.getRiskScore() + 8);
+end
+
+rule "Bodega Matrix - Access Door Entre 3 5 4 5"
+    no-loop true
+    salience 245
+    when
+        $app: LoanApplication(assetType == "BODEGA", accessDoorHeightRange == "ENTRE_3_5_4_5")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Access Door Entre 3 5 4 5");
+        $risk.addRiskFactor("BODEGA_ACCESS_DOOR_ENTRE_3_5_4_5");
+        $risk.setRiskScore(Math.max(0, $risk.getRiskScore() - 2));
+end
+
+rule "Bodega Matrix - Access Door Mayor 4 5"
+    no-loop true
+    salience 245
+    when
+        $app: LoanApplication(assetType == "BODEGA", accessDoorHeightRange == "MAYOR_4_5")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Access Door Mayor 4 5");
+        $risk.addRiskFactor("BODEGA_ACCESS_DOOR_MAYOR_4_5");
+        $risk.setRiskScore(Math.max(0, $risk.getRiskScore() - 4));
+end
+
+rule "Bodega Matrix - Area Menor 500"
+    no-loop true
+    salience 240
+    when
+        $app: LoanApplication(assetType == "BODEGA", saleableAreaRange == "MENOR_500")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Area Menor 500");
+        $risk.addRiskFactor("BODEGA_AREA_MENOR_500");
+        $risk.setRiskScore($risk.getRiskScore() + 4);
+end
+
+rule "Bodega Matrix - Area Entre 500 1000"
+    no-loop true
+    salience 240
+    when
+        $app: LoanApplication(assetType == "BODEGA", saleableAreaRange == "ENTRE_500_1000")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Area Entre 500 1000");
+        $risk.addRiskFactor("BODEGA_AREA_ENTRE_500_1000");
+        $risk.setRiskScore($risk.getRiskScore() + 1);
+end
+
+rule "Bodega Matrix - Area Entre 1000 5000"
+    no-loop true
+    salience 240
+    when
+        $app: LoanApplication(assetType == "BODEGA", saleableAreaRange == "ENTRE_1000_5000")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Area Entre 1000 5000");
+        $risk.addRiskFactor("BODEGA_AREA_ENTRE_1000_5000");
+        $risk.setRiskScore(Math.max(0, $risk.getRiskScore() - 3));
+end
+
+rule "Bodega Matrix - Area Mayor 5000"
+    no-loop true
+    salience 240
+    when
+        $app: LoanApplication(assetType == "BODEGA", saleableAreaRange == "MAYOR_5000")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Area Mayor 5000");
+        $risk.addRiskFactor("BODEGA_AREA_MAYOR_5000");
+        $risk.setRiskScore($risk.getRiskScore() + 15);
+end
+
+rule "Bodega Matrix - Access Road Principal"
+    no-loop true
+    salience 235
+    when
+        $app: LoanApplication(assetType == "BODEGA", accessRoadType == "VIA_PRINCIPAL")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Access Road Principal");
+        $risk.addRiskFactor("BODEGA_ROAD_PRINCIPAL");
+        $risk.setRiskScore(Math.max(0, $risk.getRiskScore() - 4));
+end
+
+rule "Bodega Matrix - Access Road Secondary Good"
+    no-loop true
+    salience 235
+    when
+        $app: LoanApplication(assetType == "BODEGA", accessRoadType == "VIA_SECUNDARIA_BUENAS")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Access Road Secondary Good");
+        $risk.addRiskFactor("BODEGA_ROAD_SECONDARY_GOOD");
+end
+
+rule "Bodega Matrix - Access Road Secondary Regular"
+    no-loop true
+    salience 235
+    when
+        $app: LoanApplication(assetType == "BODEGA", accessRoadType == "VIA_SECUNDARIA_REGULARES")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Access Road Secondary Regular");
+        $risk.addRiskFactor("BODEGA_ROAD_SECONDARY_REGULAR");
+        $risk.setRiskScore($risk.getRiskScore() + 7);
+end
+
+rule "Bodega Matrix - Parking Availability Yes"
+    no-loop true
+    salience 230
+    when
+        $app: LoanApplication(assetType == "BODEGA", parkingAvailability == "SI")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Parking Availability Yes");
+        $risk.addRiskFactor("BODEGA_PARKING_YES");
+        $risk.setRiskScore(Math.max(0, $risk.getRiskScore() - 3));
+end
+
+rule "Bodega Matrix - Parking Availability No"
+    no-loop true
+    salience 230
+    when
+        $app: LoanApplication(assetType == "BODEGA", parkingAvailability == "NO")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Parking Availability No");
+        $risk.addRiskFactor("BODEGA_PARKING_NO");
+        $risk.setRiskScore($risk.getRiskScore() + 7);
+end
+
+rule "Bodega Matrix - Parking Availability Uncertain"
+    no-loop true
+    salience 230
+    when
+        $app: LoanApplication(assetType == "BODEGA", parkingAvailability == "INCIERTO")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Parking Availability Uncertain");
+        $risk.addRiskFactor("BODEGA_PARKING_UNCERTAIN");
+        $risk.setRiskScore($risk.getRiskScore() + 5);
+end
+
+rule "Bodega Matrix - Parking Index Menor 50"
+    no-loop true
+    salience 225
+    when
+        $app: LoanApplication(assetType == "BODEGA", parkingIndexRange == "MENOR_50")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Parking Index Menor 50");
+        $risk.addRiskFactor("BODEGA_PARKING_INDEX_MENOR_50");
+        $risk.setRiskScore(Math.max(0, $risk.getRiskScore() - 2));
+end
+
+rule "Bodega Matrix - Parking Index Mayor 100"
+    no-loop true
+    salience 225
+    when
+        $app: LoanApplication(assetType == "BODEGA", parkingIndexRange == "MAYOR_100")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Parking Index Mayor 100");
+        $risk.addRiskFactor("BODEGA_PARKING_INDEX_MAYOR_100");
+        $risk.setRiskScore($risk.getRiskScore() + 6);
+end
+
+rule "Bodega Matrix - Sustainability Certification"
+    no-loop true
+    salience 220
+    when
+        $app: LoanApplication(assetType == "BODEGA", sustainabilityCertification == true)
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Sustainability Certification");
+        $risk.addRiskFactor("BODEGA_SUSTAINABILITY_CERT");
+        $risk.setRiskScore(Math.max(0, $risk.getRiskScore() - 6));
+end
+
+rule "Bodega Matrix - No Sustainability Certification"
+    no-loop true
+    salience 220
+    when
+        $app: LoanApplication(assetType == "BODEGA", sustainabilityCertification == false)
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - No Sustainability Certification");
+        $risk.addRiskFactor("BODEGA_NO_SUSTAINABILITY_CERT");
+        $risk.setRiskScore($risk.getRiskScore() + 3);
+end
+
+rule "Bodega Matrix - Sublease Own"
+    no-loop true
+    salience 215
+    when
+        $app: LoanApplication(assetType == "BODEGA", subleaseContractRange == "PROPIO")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Sublease Own");
+        $risk.addRiskFactor("BODEGA_SUBLEASE_PROPIO");
+        $risk.setRiskScore(Math.max(0, $risk.getRiskScore() - 4));
+end
+
+rule "Bodega Matrix - Sublease Less Than 1"
+    no-loop true
+    salience 215
+    when
+        $app: LoanApplication(assetType == "BODEGA", subleaseContractRange == "MENOR_1")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Sublease Less Than 1");
+        $risk.addRiskFactor("BODEGA_SUBLEASE_MENOR_1");
+        $risk.setRiskScore($risk.getRiskScore() + 10);
+end
+
+rule "Bodega Matrix - Sublease Between 1 5"
+    no-loop true
+    salience 215
+    when
+        $app: LoanApplication(assetType == "BODEGA", subleaseContractRange == "ENTRE_1_5")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Sublease Between 1 5");
+        $risk.addRiskFactor("BODEGA_SUBLEASE_ENTRE_1_5");
+        $risk.setRiskScore($risk.getRiskScore() + 4);
+end
+
+rule "Bodega Matrix - Sublease Between 5 10"
+    no-loop true
+    salience 215
+    when
+        $app: LoanApplication(assetType == "BODEGA", subleaseContractRange == "ENTRE_5_10")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Sublease Between 5 10");
+        $risk.addRiskFactor("BODEGA_SUBLEASE_ENTRE_5_10");
+        $risk.setRiskScore(Math.max(0, $risk.getRiskScore() - 1));
+end
+
+rule "Bodega Matrix - Sublease Greater Than 10"
+    no-loop true
+    salience 215
+    when
+        $app: LoanApplication(assetType == "BODEGA", subleaseContractRange == "MAYOR_10")
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Matrix - Sublease Greater Than 10");
+        $risk.addRiskFactor("BODEGA_SUBLEASE_MAYOR_10");
+        $risk.setRiskScore(Math.max(0, $risk.getRiskScore() - 4));
+end
+
+// ============== COMBINACIONES CRUZADAS CLAVE (LF/PF) ==============
+
+rule "Bodega Favorable Core Combination"
+    no-loop true
+    salience 205
+    when
+        $app: LoanApplication(
+            assetType == "BODEGA",
+            propertyCondition == "NUEVO",
+            propertyAgeRange == "MENOR_5",
+            propertyLocation == "PARQUE_INDUSTRIAL",
+            (clearHeightRange == "DOBLE_ALTURA" || clearHeightRange == "TRIPLE_ALTURA"),
+            accessDoorHeightRange == "MENOR_3_5",
+            accessRoadType == "VIA_PRINCIPAL"
+        )
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Favorable Core Combination");
+        $risk.addRiskFactor("BODEGA_FAVORABLE_CORE");
+        $risk.setRiskScore(Math.max(0, $risk.getRiskScore() - 12));
+        $risk.setAssessmentNotes("Bodega con perfil favorable (Concepto favorable)");
+end
+
+rule "Bodega Favorable High Capacity Combination"
+    no-loop true
+    salience 205
+    when
+        $app: LoanApplication(
+            assetType == "BODEGA",
+            propertyCondition == "NUEVO",
+            propertyLocation == "PARQUE_INDUSTRIAL",
+            clearHeightRange == "TRIPLE_ALTURA",
+            accessDoorHeightRange == "MAYOR_4_5",
+            saleableAreaRange == "ENTRE_1000_5000",
+            accessRoadType == "VIA_PRINCIPAL"
+        )
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Favorable High Capacity Combination");
+        $risk.addRiskFactor("BODEGA_FAVORABLE_HIGH_CAPACITY");
+        $risk.setRiskScore(Math.max(0, $risk.getRiskScore() - 10));
+        $risk.setAssessmentNotes("Bodega favorable para operacion de alta capacidad");
+end
+
+rule "Bodega Medium Combination Requires Specialist"
+    no-loop true
+    salience 200
+    when
+        $app: LoanApplication(
+            assetType == "BODEGA",
+            propertyCondition == "USADO",
+            propertyAgeRange == "ENTRE_5_20",
+            (propertyLocation == "ZONA_FRANCA" || propertyLocation == "ZONA_INDUSTRIAL"),
+            clearHeightRange == "DOBLE_ALTURA",
+            accessDoorHeightRange == "ENTRE_3_5_4_5"
+        )
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Medium Combination Requires Specialist");
+        $risk.addRiskFactor("BODEGA_REQUIRES_SPECIALIST");
+        $risk.setRiskScore($risk.getRiskScore() + 10);
+        $risk.setRequiresManualReview(true);
+        $risk.setAssessmentNotes("Bodega en perfil medio: requiere concepto especialista");
+end
+
+rule "Bodega Medium Legacy Combination"
+    no-loop true
+    salience 200
+    when
+        $app: LoanApplication(
+            assetType == "BODEGA",
+            propertyCondition == "USADO",
+            propertyAgeRange == "MAYOR_20",
+            propertyLocation == "ZONA_INDUSTRIAL",
+            clearHeightRange == "DOBLE_ALTURA",
+            accessRoadType == "VIA_SECUNDARIA_BUENAS"
+        )
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Medium Legacy Combination");
+        $risk.addRiskFactor("BODEGA_MEDIUM_LEGACY");
+        $risk.setRiskScore($risk.getRiskScore() + 12);
+        $risk.setRequiresManualReview(true);
+        if ($risk.getAssessmentNotes() == null) {
+            $risk.setAssessmentNotes("Combinacion media de legado: requiere especialista");
+        }
+end
+
+rule "Bodega Not Favorable Old And Very Large"
+    no-loop true
+    salience 195
+    when
+        $app: LoanApplication(
+            assetType == "BODEGA",
+            propertyAgeRange == "MAYOR_20",
+            saleableAreaRange == "MAYOR_5000"
+        )
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Not Favorable Old And Very Large");
+        $risk.addRiskFactor("BODEGA_NO_FAVORABLE_OLD_VERY_LARGE");
+        $risk.setRiskScore($risk.getRiskScore() + 35);
+        $risk.setRequiresManualReview(true);
+end
+
+rule "Bodega Not Favorable Low Height And Very Large"
+    no-loop true
+    salience 195
+    when
+        $app: LoanApplication(
+            assetType == "BODEGA",
+            clearHeightRange == "MENOR_7",
+            saleableAreaRange == "MAYOR_5000"
+        )
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Not Favorable Low Height And Very Large");
+        $risk.addRiskFactor("BODEGA_NO_FAVORABLE_LOW_HEIGHT");
+        $risk.setRiskScore($risk.getRiskScore() + 30);
+end
+
+rule "Bodega Not Favorable Other Location And Very Large"
+    no-loop true
+    salience 195
+    when
+        $app: LoanApplication(
+            assetType == "BODEGA",
+            propertyLocation == "OTRA_UBICACION",
+            saleableAreaRange == "MAYOR_5000"
+        )
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Not Favorable Other Location And Very Large");
+        $risk.addRiskFactor("BODEGA_NO_FAVORABLE_LOCATION_AREA");
+        $risk.setRiskScore($risk.getRiskScore() + 30);
+end
+
+rule "Bodega Critical Not Favorable Combination"
+    no-loop true
+    salience 190
+    when
+        $app: LoanApplication(
+            assetType == "BODEGA",
+            propertyAgeRange == "MAYOR_20",
+            propertyLocation == "OTRA_UBICACION",
+            clearHeightRange == "MENOR_7"
+        )
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Critical Not Favorable Combination");
+        $risk.addRiskFactor("BODEGA_CRITICAL_NO_FAVORABLE");
+        $risk.setRiskScore($risk.getRiskScore() + 45);
+        $risk.setRequiresManualReview(true);
+        $risk.setRecommendedAction("MANUAL_REVIEW");
+end
+
+rule "Bodega Extreme Critical Combination"
+    no-loop true
+    salience 190
+    when
+        $app: LoanApplication(
+            assetType == "BODEGA",
+            propertyAgeRange == "MAYOR_20",
+            propertyLocation == "OTRA_UBICACION",
+            clearHeightRange == "MENOR_7",
+            accessDoorHeightRange == "MENOR_3_5",
+            parkingIndexRange == "MAYOR_100"
+        )
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addAppliedRule("Bodega Extreme Critical Combination");
+        $risk.addRiskFactor("BODEGA_EXTREME_CRITICAL");
+        $risk.setRiskScore($risk.getRiskScore() + 50);
+        $risk.setRequiresManualReview(true);
+        $risk.setRecommendedAction("REJECT");
+        $risk.setAssessmentNotes("Bodega no favorable critica (combinacion extrema)");
+end
+
+// ============== CLASIFICACION FINAL DE MATRIZ BODEGA ==============
+
+rule "Bodega Matrix Final Classification Favorable"
+    no-loop true
+    salience 150
+    when
+        $app: LoanApplication(assetType == "BODEGA")
+        $risk: RiskAssessment(applicationId == $app.applicationId, riskScore <= 20)
+    then
+        $risk.addAppliedRule("Bodega Matrix Final Classification Favorable");
+        $risk.addRiskFactor("BODEGA_RESULT_FAVORABLE");
+        if ($risk.getAssessmentNotes() == null) {
+            $risk.setAssessmentNotes("Matriz bodega: resultado favorable");
+        }
+end
+
+rule "Bodega Matrix Final Classification Medium"
+    no-loop true
+    salience 150
+    when
+        $app: LoanApplication(assetType == "BODEGA")
+        $risk: RiskAssessment(applicationId == $app.applicationId, riskScore > 20, riskScore < 55)
+    then
+        $risk.addAppliedRule("Bodega Matrix Final Classification Medium");
+        $risk.addRiskFactor("BODEGA_RESULT_MEDIUM");
+        $risk.setRequiresManualReview(true);
+        if ($risk.getAssessmentNotes() == null) {
+            $risk.setAssessmentNotes("Matriz bodega: requiere concepto especialista");
+        }
+end
+
+rule "Bodega Matrix Final Classification Not Favorable"
+    no-loop true
+    salience 150
+    when
+        $app: LoanApplication(assetType == "BODEGA")
+        $risk: RiskAssessment(applicationId == $app.applicationId, riskScore >= 55)
+    then
+        $risk.addAppliedRule("Bodega Matrix Final Classification Not Favorable");
+        $risk.addRiskFactor("BODEGA_RESULT_NOT_FAVORABLE");
+        $risk.setRequiresManualReview(true);
+        $risk.setRecommendedAction("MANUAL_REVIEW");
+        if ($risk.getAssessmentNotes() == null) {
+            $risk.setAssessmentNotes("Matriz bodega: no favorable");
+        }
+end

@@ -1,0 +1,116 @@
+package com.drools.poc.rules
+
+import com.drools.poc.model.Customer
+import com.drools.poc.model.LoanApplication
+import com.drools.poc.model.RiskAssessment
+import com.drools.poc.model.Decision
+
+/**
+ * REGLAS USANDO DSL - Tabla de Decision en formato de reglas
+ */
+
+// Tabla de Decision: Evaluacion de limites de prestamo segun ingreso
+rule "Loan Amount vs Income Verification"
+    no-loop true
+    when
+        $customer: Customer(monthlyIncome > 0)
+        $app: LoanApplication(
+            customerId == $customer.customerId,
+            loanTerm > 0
+        )
+        eval(($app.getLoanAmount() / $app.getLoanTerm()) > ($customer.getMonthlyIncome() * 0.50))
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addRiskFactor("LOAN_EXCEEDS_INCOME_CAPACITY");
+        $risk.addAppliedRule("Loan Amount vs Income Verification");
+        $risk.setRiskScore($risk.getRiskScore() + 40);
+        System.out.println("[DECISION TABLE] Monthly payment exceeds 50% of income");
+end
+
+// Tabla de Decision: Evaluacion segun tipo de colateral
+rule "Collateral Risk Assessment Matrix"
+    no-loop true
+    when
+        $app: LoanApplication(collateralType != "NONE", collateralValue > 0)
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        String collateralRisk = "MEDIUM";
+        double ltv = ($app.getLoanAmount() / $app.getCollateralValue()) * 100;
+        
+        if ("PROPERTY".equals($app.getCollateralType())) {
+            collateralRisk = ltv > 90 ? "HIGH" : (ltv > 70 ? "MEDIUM" : "LOW");
+        } else if ("VEHICLE".equals($app.getCollateralType())) {
+            collateralRisk = ltv > 80 ? "HIGH" : (ltv > 60 ? "MEDIUM" : "LOW");
+        } else if ("OTHER".equals($app.getCollateralType())) {
+            collateralRisk = "HIGH";
+        }
+        
+        if ("HIGH".equals(collateralRisk)) {
+            $risk.setRiskScore($risk.getRiskScore() + 25);
+            $risk.addRiskFactor("HIGH_COLLATERAL_RISK");
+        } else if ("LOW".equals(collateralRisk)) {
+            $risk.setRiskScore(Math.max(0, $risk.getRiskScore() - 15));
+        }
+        
+        System.out.println("[DECISION TABLE] Collateral Risk: " + collateralRisk + " (LTV: " + String.format("%.2f%%", ltv) + ")");
+end
+
+// Tabla de Decision: Matriz de edad y credito
+rule "Age and Credit Score Matrix"
+    no-loop true
+    when
+        $customer: Customer()
+        $app: LoanApplication(customerId == $customer.customerId)
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        int riskAdjustment = 0;
+        
+        if ($customer.getAge() < 30 && $customer.getCreditScore() < 600) {
+            riskAdjustment = 35;
+        } else if ($customer.getAge() < 30 && $customer.getCreditScore() >= 600) {
+            riskAdjustment = 15;
+        } else if ($customer.getAge() >= 30 && $customer.getAge() < 50 && $customer.getCreditScore() < 600) {
+            riskAdjustment = 25;
+        } else if ($customer.getAge() >= 50 && $customer.getCreditScore() >= 700) {
+            riskAdjustment = -10;
+        }
+        
+        if (riskAdjustment > 0) {
+            $risk.setRiskScore($risk.getRiskScore() + riskAdjustment);
+            System.out.println("[DECISION TABLE] Age-Credit Matrix: Risk += " + riskAdjustment);
+        } else if (riskAdjustment < 0) {
+            $risk.setRiskScore(Math.max(0, $risk.getRiskScore() + riskAdjustment));
+            System.out.println("[DECISION TABLE] Age-Credit Matrix: Risk -= " + Math.abs(riskAdjustment));
+        }
+end
+
+// Tabla de Decision: Tipo de prestamo y proposito
+rule "Loan Purpose and Product Type Matrix"
+    no-loop true
+    when
+        $app: LoanApplication(productType != null, loanPurpose != null)
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        int riskAdjustment = 0;
+        
+        if ("PERSONAL".equals($app.getLoanPurpose())) {
+            riskAdjustment = 20;
+        } else if ("BUSINESS".equals($app.getLoanPurpose())) {
+            riskAdjustment = 30;
+        } else if ("MORTGAGE".equals($app.getLoanPurpose())) {
+            riskAdjustment = -10;
+        } else if ("AUTO".equals($app.getLoanPurpose())) {
+            riskAdjustment = 5;
+        }
+        
+        if ("PREMIUM".equals($app.getProductType())) {
+            riskAdjustment -= 5;
+        } else if ("FAST_TRACK".equals($app.getProductType())) {
+            riskAdjustment += 10;
+        }
+        
+        if (riskAdjustment != 0) {
+            $risk.setRiskScore(Math.max(0, $risk.getRiskScore() + riskAdjustment));
+            System.out.println("[DECISION TABLE] Loan Purpose Matrix: Risk adjustment = " + riskAdjustment);
+        }
+end

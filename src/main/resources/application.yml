@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: drools-poc
+  profiles:
+    active: dev
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+logging:
+  level:
+    root: INFO
+    com.drools.poc: DEBUG
+    org.drools: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+# Configuración específica de Drools
+drools:
+  rules-path: classpath:rules/
+  enable-rule-verification: true
+  enable-metrics: true

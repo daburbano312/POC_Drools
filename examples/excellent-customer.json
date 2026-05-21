@@ -1,0 +1,23 @@
+{
+  "customerId": "CUST-EXCELLENT-001",
+  "name": "Jane Smith",
+  "age": 45,
+  "monthlyIncome": 8000,
+  "creditScore": 850,
+  "currentDebt": 500,
+  "yearsWithBank": 15,
+  "employmentStatus": "EMPLOYED",
+  "hasSavings": true,
+  "savingsAmount": 50000,
+  "isPoliticallyExposed": false,
+  "nationality": "US",
+  "loanAmount": 100000,
+  "loanTerm": 120,
+  "loanPurpose": "MORTGAGE",
+  "productType": "PREMIUM",
+  "collateralType": "PROPERTY",
+  "collateralValue": 250000,
+  "isRefinancing": false,
+  "previousLoansAmount": 0,
+  "numberOfApplicationsLast6Months": 0
+}

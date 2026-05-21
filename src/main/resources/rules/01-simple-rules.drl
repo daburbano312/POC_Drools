@@ -1,0 +1,108 @@
+package com.drools.poc.rules
+
+import com.drools.poc.model.Customer
+import com.drools.poc.model.LoanApplication
+import com.drools.poc.model.RiskAssessment
+import com.drools.poc.model.Decision
+
+/**
+ * REGLAS SIMPLES - Validaciones basicas
+ */
+
+// Regla 1: Evaluar edad minima
+rule "Customer Age Validation"
+    no-loop true
+    when
+        $customer: Customer(age < 18)
+        $app: LoanApplication(customerId == $customer.customerId)
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addRiskFactor("CUSTOMER_UNDERAGE");
+        $risk.addAppliedRule("Customer Age Validation");
+        $risk.setRiskScore($risk.getRiskScore() + 25);
+        System.out.println("[RULE] Customer too young");
+end
+
+// Regla 2: Validar edad maxima
+rule "Customer Age Excessive"
+    no-loop true
+    when
+        $customer: Customer(age > 75)
+        $app: LoanApplication(customerId == $customer.customerId)
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addRiskFactor("CUSTOMER_TOO_OLD");
+        $risk.addAppliedRule("Customer Age Excessive");
+        $risk.setRiskScore($risk.getRiskScore() + 15);
+        System.out.println("[RULE] Customer age excessive");
+end
+
+// Regla 3: Verificar estatus de empleo
+rule "Unemployed Customer"
+    no-loop true
+    when
+        $customer: Customer(employmentStatus == "UNEMPLOYED")
+        $app: LoanApplication(customerId == $customer.customerId)
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addRiskFactor("UNEMPLOYED_STATUS");
+        $risk.addAppliedRule("Unemployed Customer");
+        $risk.setRiskScore($risk.getRiskScore() + 30);
+        System.out.println("[RULE] Customer is unemployed");
+end
+
+// Regla 4: Verificar puntaje de credito bajo
+rule "Low Credit Score"
+    no-loop true
+    when
+        $customer: Customer(creditScore < 500)
+        $app: LoanApplication(customerId == $customer.customerId)
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addRiskFactor("LOW_CREDIT_SCORE");
+        $risk.addAppliedRule("Low Credit Score");
+        $risk.setRiskScore($risk.getRiskScore() + 40);
+        System.out.println("[RULE] Low credit score");
+end
+
+// Regla 5: Validar cliente PEP
+rule "Politically Exposed Person"
+    no-loop true
+    when
+        $customer: Customer(politicallyExposed == true)
+        $app: LoanApplication(customerId == $customer.customerId)
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addRiskFactor("PEP_CUSTOMER");
+        $risk.addAppliedRule("Politically Exposed Person");
+        $risk.setRiskScore($risk.getRiskScore() + 35);
+        $risk.setRequiresManualReview(true);
+        System.out.println("[RULE] Customer is politically exposed");
+end
+
+// Regla 6: Validar solicitud temprana despues de aplicacion previa
+rule "Multiple Recent Applications"
+    no-loop true
+    when
+        $app: LoanApplication(numberOfApplicationsLast6Months > 3)
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addRiskFactor("MULTIPLE_RECENT_APPLICATIONS");
+        $risk.addAppliedRule("Multiple Recent Applications");
+        $risk.setRiskScore($risk.getRiskScore() + 20);
+        System.out.println("[RULE] Multiple recent applications");
+end
+
+// Regla 7: Verificar ingresos suficientes
+rule "Low Monthly Income"
+    no-loop true
+    when
+        $customer: Customer(monthlyIncome < 1000)
+        $app: LoanApplication(customerId == $customer.customerId)
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addRiskFactor("LOW_INCOME");
+        $risk.addAppliedRule("Low Monthly Income");
+        $risk.setRiskScore($risk.getRiskScore() + 25);
+        System.out.println("[RULE] Low monthly income");
+end

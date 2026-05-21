@@ -1,0 +1,177 @@
+package com.drools.poc.rules
+
+import com.drools.poc.model.Customer
+import com.drools.poc.model.LoanApplication
+import com.drools.poc.model.RiskAssessment
+import com.drools.poc.model.Decision
+
+/**
+ * REGLAS DE DECISION - Determinan acciones finales basadas en evaluacion de riesgo
+ */
+
+// Regla 17: Riesgo critico - RECHAZO AUTOMATICO
+rule "Critical Risk Auto Reject"
+    no-loop true
+    salience 100
+    when
+        $risk: RiskAssessment()
+        eval(
+            $risk.getRiskScore() >= 85 ||
+            "CRITICAL".equals($risk.getRiskLevel()) ||
+            $risk.getRiskFactors().contains("PEP_CUSTOMER") ||
+            $risk.getRiskFactors().contains("CUSTOMER_UNDERAGE")
+        )
+        $app: LoanApplication(applicationId == $risk.applicationId)
+        $decision: Decision(applicationId == $app.applicationId)
+    then
+        $decision.setStatus("REJECTED");
+        $decision.setRejectionReason("Automatic rejection due to critical risk factors");
+        $decision.setCanApply(false);
+        $risk.setRecommendedAction("REJECT");
+        $risk.setRiskLevel("CRITICAL");
+        System.out.println("[DECISION] Application REJECTED - Critical Risk");
+end
+
+// Regla 18: Alto riesgo - REVISION MANUAL
+rule "High Risk Manual Review"
+    no-loop true
+    salience 90
+    when
+        $risk: RiskAssessment(riskLevel != "CRITICAL")
+        eval($risk.getRiskScore() >= 60 && $risk.getRiskScore() < 85)
+        $app: LoanApplication(applicationId == $risk.applicationId)
+        $decision: Decision(applicationId == $app.applicationId)
+    then
+        $decision.setStatus("PENDING_REVIEW");
+        $risk.setRecommendedAction("MANUAL_REVIEW");
+        $risk.setRiskLevel("HIGH");
+        $risk.setRequiresManualReview(true);
+        $decision.setPriorityLevel(1);
+        System.out.println("[DECISION] Application sent to MANUAL REVIEW");
+end
+
+// Regla 19: Riesgo moderado - APROBACION CON CONDICIONES
+rule "Medium Risk Conditional Approval"
+    no-loop true
+    salience 80
+    when
+        $risk: RiskAssessment()
+        eval(
+            $risk.getRiskScore() >= 40 &&
+            $risk.getRiskScore() < 60 &&
+            !"HIGH".equals($risk.getRiskLevel()) &&
+            !"CRITICAL".equals($risk.getRiskLevel())
+        )
+        $app: LoanApplication(applicationId == $risk.applicationId)
+        $customer: Customer(customerId == $app.customerId)
+        $decision: Decision(applicationId == $app.applicationId)
+    then
+        double approvalPercentage = 1.0 - ((double)$risk.getRiskScore() / 100.0);
+        double approvedAmount = $app.getLoanAmount() * approvalPercentage;
+        double interestIncrease = ($risk.getRiskScore() - 40) * 0.05;
+        double finalRate = $app.getProposedInterestRate() + interestIncrease;
+        
+        $decision.setStatus("APPROVED");
+        $decision.setApprovedAmount(approvedAmount);
+        $decision.setApprovedInterestRate(finalRate);
+        $decision.setApprovedTerm($app.getLoanTerm());
+        $decision.setConditions("Approved with risk-adjusted terms");
+        $risk.setRecommendedAction("APPROVE_WITH_CONDITIONS");
+        $risk.setRiskLevel("MEDIUM");
+        $risk.setMaxApprovedAmount(approvedAmount);
+        $risk.setMinInterestRate(finalRate);
+        
+        System.out.println("[DECISION] CONDITIONAL APPROVAL");
+end
+
+// Regla 20: Bajo riesgo - APROBACION AUTOMATICA
+rule "Low Risk Auto Approval"
+    no-loop true
+    salience 70
+    when
+        $risk: RiskAssessment()
+        eval(
+            $risk.getRiskScore() < 40 &&
+            !"MEDIUM".equals($risk.getRiskLevel()) &&
+            !"HIGH".equals($risk.getRiskLevel()) &&
+            !"CRITICAL".equals($risk.getRiskLevel())
+        )
+        $app: LoanApplication(applicationId == $risk.applicationId)
+        $customer: Customer(
+            customerId == $app.customerId,
+            creditScore > 700,
+            employmentStatus != "UNEMPLOYED"
+        )
+        $decision: Decision(applicationId == $app.applicationId)
+    then
+        $decision.setStatus("APPROVED");
+        $decision.setApprovedAmount($app.getLoanAmount());
+        $decision.setApprovedInterestRate($app.getProposedInterestRate());
+        $decision.setApprovedTerm($app.getLoanTerm());
+        $decision.setDecisionEngine("AUTOMATED");
+        $risk.setRecommendedAction("APPROVE");
+        $risk.setRiskLevel("LOW");
+        $risk.setMaxApprovedAmount($app.getLoanAmount());
+        $risk.setMinInterestRate($app.getProposedInterestRate());
+        $decision.setConfidenceScore(95.0);
+        
+        System.out.println("[DECISION] AUTO APPROVED");
+end
+
+// Regla 21: Definir documentacion requerida segun riesgo
+rule "Document Requirements Based on Risk"
+    no-loop true
+    when
+        $risk: RiskAssessment(riskScore >= 40)
+        $app: LoanApplication(applicationId == $risk.applicationId)
+    then
+        $risk.setRequiresDocumentation(true);
+        $risk.addRequiredDocument("Income Verification");
+        $risk.addRequiredDocument("Bank Statements");
+        
+        if ($risk.getRiskScore() >= 60) {
+            $risk.addRequiredDocument("Employment Contract");
+            $risk.addRequiredDocument("Tax Returns");
+        }
+        
+        if ($app.getLoanAmount() > 100000) {
+            $risk.addRequiredDocument("Collateral Assessment");
+            $risk.addRequiredDocument("Insurance Policy");
+        }
+        
+        System.out.println("[RULE] Documents required: " + $risk.getRequiredDocuments().size());
+end
+
+// Regla 22: Evaluacion de tasa de interes segun tipo de producto
+rule "Interest Rate Adjustment by Product Type"
+    no-loop true
+    when
+        $app: LoanApplication(productType != null)
+        eval("PREMIUM".equals($app.getProductType()) || "FAST_TRACK".equals($app.getProductType()))
+        $decision: Decision(applicationId == $app.applicationId, status == "APPROVED")
+    then
+        double rateAdjustment = $app.getProductType().equals("PREMIUM") ? -0.5 : 0.75;
+        double newRate = $decision.getApprovedInterestRate() + rateAdjustment;
+        $decision.setApprovedInterestRate(newRate);
+        
+        System.out.println("[RULE] Interest rate adjusted");
+end
+
+// Regla 23: Fijar nivel de prioridad para procesamiento
+rule "Set Processing Priority"
+    no-loop true
+    when
+        $risk: RiskAssessment()
+        $decision: Decision(applicationId == $risk.applicationId)
+    then
+        int priority = 5;
+        if ($decision.getStatus().equals("APPROVED")) {
+            priority = 10;
+        } else if ($decision.getStatus().equals("PENDING_REVIEW")) {
+            priority = 3;
+        } else if ($decision.getStatus().equals("REJECTED")) {
+            priority = 1;
+        }
+        $decision.setPriorityLevel(priority);
+        System.out.println("[RULE] Priority level set: " + priority);
+end

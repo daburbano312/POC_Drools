@@ -1,0 +1,136 @@
+package com.drools.poc.rules
+
+import com.drools.poc.model.Customer
+import com.drools.poc.model.LoanApplication
+import com.drools.poc.model.RiskAssessment
+import com.drools.poc.model.Decision
+
+/**
+ * REGLAS ENCADENADAS - Forward Chaining y logica compleja
+ */
+
+// Regla 8: Calcular ratio de deuda a ingreso
+rule "Calculate Debt to Income Ratio"
+    no-loop true
+    when
+        $customer: Customer(monthlyIncome > 0)
+        $app: LoanApplication(customerId == $customer.customerId)
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        double monthlyLoanPayment = ($app.getLoanAmount() / $app.getLoanTerm()) * (1 + ($app.getProposedInterestRate() / 100));
+        double totalMonthlyDebt = $customer.getCurrentDebt() + monthlyLoanPayment;
+        double dtiRatio = totalMonthlyDebt / $customer.getMonthlyIncome();
+        $app.setDebtToIncomeRatio(dtiRatio);
+        System.out.println("[CALC] DTI Ratio: " + String.format("%.2f", dtiRatio));
+end
+
+// Regla 9: Evaluar ratio de deuda a ingreso alto
+rule "High Debt to Income Ratio"
+    no-loop true
+    when
+        $app: LoanApplication(debtToIncomeRatio > 0.40)
+        $customer: Customer(customerId == $app.customerId)
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addRiskFactor("HIGH_DEBT_TO_INCOME");
+        $risk.addAppliedRule("High Debt to Income Ratio");
+        $risk.setRiskScore($risk.getRiskScore() + 35);
+        System.out.println("[RULE] DTI Ratio exceeds 40%");
+end
+
+// Regla 10: Calcular Loan to Value ratio
+rule "Calculate Loan to Value Ratio"
+    no-loop true
+    when
+        $app: LoanApplication(collateralValue > 0)
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        double ltv = ($app.getLoanAmount() / $app.getCollateralValue()) * 100;
+        $app.setLoanToValueRatio(ltv);
+        System.out.println("[CALC] LTV Ratio: " + String.format("%.2f%%", ltv));
+end
+
+// Regla 11: Alto LTV
+rule "High Loan to Value Ratio"
+    no-loop true
+    when
+        $app: LoanApplication(collateralValue > 0, loanToValueRatio > 80)
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addRiskFactor("HIGH_LTV");
+        $risk.addAppliedRule("High Loan to Value Ratio");
+        $risk.setRiskScore($risk.getRiskScore() + 30);
+        System.out.println("[RULE] LTV Ratio exceeds 80%");
+end
+
+// Regla 12: Riesgo por monto de prestamo grande
+rule "Large Loan Amount"
+    no-loop true
+    when
+        $app: LoanApplication(loanAmount > 250000)
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addRiskFactor("LARGE_LOAN_AMOUNT");
+        $risk.addAppliedRule("Large Loan Amount");
+        $risk.setRiskScore($risk.getRiskScore() + 20);
+        $risk.setRequiresManualReview(true);
+        System.out.println("[RULE] Large loan amount detected");
+end
+
+// Regla 13: Cliente nuevo con bajo historial
+rule "New Customer with Low Bank History"
+    no-loop true
+    when
+        $customer: Customer(yearsWithBank < 2)
+        $app: LoanApplication(customerId == $customer.customerId)
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addRiskFactor("NEW_CUSTOMER_LOW_HISTORY");
+        $risk.addAppliedRule("New Customer with Low Bank History");
+        $risk.setRiskScore($risk.getRiskScore() + 25);
+        System.out.println("[RULE] Customer has low bank history");
+end
+
+// Regla 14: Cliente con ahorros (REDUCE riesgo)
+rule "Customer with Savings Reduces Risk"
+    no-loop true
+    when
+        $customer: Customer(hasSavings == true, savingsAmount > 5000)
+        $app: LoanApplication(customerId == $customer.customerId)
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addRiskFactor("MITIGATING_SAVINGS");
+        $risk.addAppliedRule("Customer with Savings");
+        double reduction = Math.min($risk.getRiskScore() * 0.15, 20);
+        $risk.setRiskScore(Math.max(0, $risk.getRiskScore() - (int)reduction));
+        System.out.println("[RULE] Customer has savings - Risk reduced by " + String.format("%.0f", reduction));
+end
+
+// Regla 15: Cliente con historial positivo
+rule "Long Relationship with Bank"
+    no-loop true
+    when
+        $customer: Customer(yearsWithBank > 10, creditScore > 700)
+        $app: LoanApplication(customerId == $customer.customerId)
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addRiskFactor("POSITIVE_BANK_HISTORY");
+        $risk.addAppliedRule("Long Relationship with Bank");
+        double reduction = Math.min($risk.getRiskScore() * 0.20, 25);
+        $risk.setRiskScore(Math.max(0, $risk.getRiskScore() - (int)reduction));
+        System.out.println("[RULE] Long customer relationship - Risk reduced by " + String.format("%.0f", reduction));
+end
+
+// Regla 16: Solicitud de refinanciamiento
+rule "Refinancing Loan Reduces Risk"
+    no-loop true
+    when
+        $app: LoanApplication(refinancing == true, previousLoansAmount > 0)
+        $risk: RiskAssessment(applicationId == $app.applicationId)
+    then
+        $risk.addRiskFactor("REFINANCING_LOAN");
+        $risk.addAppliedRule("Refinancing Loan");
+        double reduction = Math.min($risk.getRiskScore() * 0.10, 15);
+        $risk.setRiskScore(Math.max(0, $risk.getRiskScore() - (int)reduction));
+        System.out.println("[RULE] Refinancing loan - Risk reduced by " + String.format("%.0f", reduction));
+end

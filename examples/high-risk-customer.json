@@ -1,0 +1,23 @@
+{
+  "customerId": "CUST-HIGH-RISK-003",
+  "name": "Alice Williams",
+  "age": 17,
+  "monthlyIncome": 800,
+  "creditScore": 400,
+  "currentDebt": 5000,
+  "yearsWithBank": 0,
+  "employmentStatus": "UNEMPLOYED",
+  "hasSavings": false,
+  "savingsAmount": 0,
+  "isPoliticallyExposed": true,
+  "nationality": "XX",
+  "loanAmount": 100000,
+  "loanTerm": 60,
+  "loanPurpose": "PERSONAL",
+  "productType": "FAST_TRACK",
+  "collateralType": "NONE",
+  "collateralValue": 0,
+  "isRefinancing": false,
+  "previousLoansAmount": 0,
+  "numberOfApplicationsLast6Months": 5
+}
